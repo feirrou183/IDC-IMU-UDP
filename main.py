@@ -30,7 +30,7 @@ xA, yA, zA, quad = [0.] * 4
 deviceNumber = ''
 
 s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-address = ('127.0.0.1', 31500)
+address = ('127.0.0.1', 9999)
 
 
 def AccDataToDigital(data):
@@ -96,7 +96,9 @@ def getDataAndDraw(com):
 
     startTime = time.time()
     Count = 0
-    while Count<10000:
+    allDataList = ['#']
+    tmpDict = {}
+    while True:
         DataList.clear()
         data = com.read()  # 阻塞等待
         if (data == b'P'):  # P
@@ -112,8 +114,24 @@ def getDataAndDraw(com):
                 if (OTag + KTag == b'OK'):
                     xAcc, yAcc, zAcc, quad = Calculate(deviceNumber, DataList, delayTime)  # 一次数据采集完成
                     # print("device:--", deviceNumber, "--ACC: ", xAcc, "--", yAcc, "--", zAcc)
-                    msg = str([deviceNumber, xA, yA, zA, quad])
-                    s.sendto(msg.encode('utf-8'), address)
+                    # msg = str([deviceNumber, xA, yA, zA, quad])
+                    quadStr = [str(qd) for qd in quad]
+
+                    # 防止设备号不按顺序
+                    tmpDict[deviceNumber] = quadStr.copy()
+
+                    # 判断是否放进传递数组
+                    if deviceNumber == 6 and len(tmpDict) == 7:
+                        msgList = []
+                        for dev in range(7):
+                            msgList += tmpDict[dev]
+                            
+                        msgSend = '#' + ';'.join(msgList.copy())
+                        # 写进UDP端口中
+                        print(msgSend)
+                        tmpDict = {}
+                        s.sendto(msgSend.encode('utf-8'), address)
+                        
                     Count += 1
                 else:
                     print("Error")
