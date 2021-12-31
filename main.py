@@ -128,7 +128,7 @@ def getDataAndDraw(com):
                             
                         msgSend = '#' + ';'.join(msgList.copy())
                         # 写进UDP端口中
-                        print(msgSend)
+                        #print(msgSend)
                         tmpDict = {}
                         s.sendto(msgSend.encode('utf-8'), address)
                         

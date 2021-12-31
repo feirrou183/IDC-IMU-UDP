@@ -13,6 +13,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.IO.Ports;
+using UnityEditorInternal.VersionControl;
 
 class IMU
 {
@@ -25,6 +26,18 @@ class IMU
     public float RotZ_Q = 0;
     public float RotW_Q = 0;
 };
+
+enum BodyPart:int
+{
+    Neck = 0,
+    ClavicleLeft = 1,
+    UpperArmLeft = 2,
+    LowerArmLeft = 3,
+    ClavicleRight= 4,
+    UpperArmRight= 5,
+    LowerArmRight= 6,
+}
+
 
 
 public class PlayerMove : MonoBehaviour
@@ -60,22 +73,27 @@ public class PlayerMove : MonoBehaviour
     //private IMU imu_LowerArmLeft = new IMU();
     //private IMU imu_LowerArmRight = new IMU();
 
-    private List<IMU> IMUs;
-    private List<Vector3> Changes;
+    private Dictionary<BodyPart,IMU> IMUs;
     private EndPoint point;
     private EndPoint pointEnd;
+    private Dictionary<BodyPart, Quaternion> refQuatation;     //参考值
+    private Dictionary<BodyPart, Quaternion> originQuatation;  //传感器初始值
 
 
 
     void Start()
     {
-        IMUs = new List<IMU>(NumOfIMU);
-        Changes = new List<Vector3>(NumOfIMU);
-        for (int item = 0; item < NumOfIMU; item++)
+        IMUs = new Dictionary<BodyPart, IMU>(NumOfIMU);
+        refQuatation = new Dictionary<BodyPart, Quaternion>(NumOfIMU);
+        originQuatation = new Dictionary<BodyPart, Quaternion>(NumOfIMU);
+
+        foreach (BodyPart item in Enum.GetValues(typeof(BodyPart)))
         {
-            IMUs.Add(new IMU());
-            Changes.Add(new Vector3());
+            IMUs.Add(item, new IMU());
+            refQuatation.Add(item, Quaternion.identity);
+            originQuatation.Add(item, Quaternion.identity);
         }
+
 
         string str = "#1;2;3";
         string ss = str.Substring(1);
@@ -107,8 +125,15 @@ public class PlayerMove : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        if (Input.GetKey(KeyCode.R))   //重置命令
+        {
+            foreach (KeyValuePair<BodyPart, Quaternion> item in refQuatation)
+            {
+                refQuatation[item.Key] = originQuatation[item.Key];
+            }
+        }
+
         setOri(IMUs);
-        //UnityEngine.Debug.LogWarning(string.Format("imu_Neck.RotX_Q: {0}, {1}, {2}, {3}", IMUs[1].RotW_Q, IMUs[1].RotX_Q, IMUs[1].RotY_Q, IMUs[1].RotZ_Q));
     }
 
     void sendMsg()
@@ -169,22 +194,20 @@ public class PlayerMove : MonoBehaviour
 
                 //Vector3 NewAngle = new Quaternion(RotX, RotY, RotZ, RotW).eulerAngles;
                 //Vector3 OldAngle = new Quaternion(IMUs[i].RotX_Q, IMUs[i].RotY_Q, IMUs[i].RotZ_Q, IMUs[i].RotW_Q).eulerAngles;
-
                 //Changes[i] =(NewAngle - OldAngle);
-
-                IMUs[i].RotX_Q = RotX;
-                IMUs[i].RotY_Q = RotY;
-                IMUs[i].RotZ_Q = RotZ;
-                IMUs[i].RotW_Q = RotW;
-
+                //IMUs[i].RotX_Q = RotX;
+                //IMUs[i].RotY_Q = RotY;
+                //IMUs[i].RotZ_Q = RotZ;
+                //IMUs[i].RotW_Q = RotW;   
+                //refQuatation[(BodyPart)i] = new Quaternion(, -RotX, -RotY, RotW);
+                refQuatation[(BodyPart)i] = new Quaternion(-RotZ, -RotX, -RotY, RotW);
 
             }
         }
     }
 
-    
 
-    void setOri(List<IMU> IMUs)
+    void setOri(Dictionary<BodyPart,IMU> IMUs)
     {
         //m_Neck.rotation = new Quaternion(IMUs[0].RotX_Q,IMUs[0].RotY_Q,
         //    IMUs[0].RotZ_Q,IMUs[0].RotW_Q);
@@ -201,29 +224,32 @@ public class PlayerMove : MonoBehaviour
         //m_LowerArmRight.rotation = new Quaternion(IMUs[6].RotX_Q, IMUs[6].RotY_Q,
         //    IMUs[6].RotZ_Q, IMUs[6].RotW_Q);
 
-        m_Neck.rotation = new Quaternion(IMUs[0].RotZ_Q,-IMUs[0].RotX_Q,
-            -IMUs[0].RotY_Q, IMUs[0].RotW_Q);
-        m_ClavicleLeft.rotation = new Quaternion(IMUs[1].RotZ_Q, -IMUs[1].RotX_Q,
-            -IMUs[1].RotY_Q, IMUs[1].RotW_Q);
-        m_UpperArmLeft.rotation = new Quaternion(IMUs[2].RotZ_Q, -IMUs[2].RotX_Q,
-            -IMUs[2].RotY_Q, IMUs[2].RotW_Q);
-        m_LowerArmLeft.rotation = new Quaternion(IMUs[3].RotZ_Q, -IMUs[3].RotX_Q,
-            -IMUs[3].RotY_Q, IMUs[3].RotW_Q);
-        m_ClavicleRight.rotation = new Quaternion(IMUs[4].RotZ_Q, -IMUs[4].RotX_Q,
-            -IMUs[4].RotY_Q, IMUs[4].RotW_Q);
-        m_UpperArmRight.rotation = new Quaternion(IMUs[5].RotZ_Q, -IMUs[5].RotX_Q,
-            -IMUs[5].RotY_Q, IMUs[5].RotW_Q);
-        m_LowerArmRight.rotation = new Quaternion(IMUs[6].RotZ_Q, -IMUs[6].RotX_Q,
-            -IMUs[6].RotY_Q, IMUs[6].RotW_Q);
+        //m_Neck.rotation = new Quaternion(IMUs[BodyPart.Neck].RotZ_Q,-IMUs[BodyPart.Neck].RotX_Q,
+        //    -IMUs[BodyPart.Neck].RotY_Q, IMUs[BodyPart.Neck].RotW_Q);
+        //m_ClavicleLeft.rotation = new Quaternion(IMUs[BodyPart.ClavicleLeft].RotZ_Q, -IMUs[BodyPart.ClavicleLeft].RotX_Q,
+        //    -IMUs[BodyPart.ClavicleLeft].RotY_Q, IMUs[BodyPart.ClavicleLeft].RotW_Q);
+        //m_UpperArmLeft.rotation = new Quaternion(IMUs[BodyPart.UpperArmLeft].RotZ_Q, -IMUs[BodyPart.UpperArmLeft].RotX_Q,
+        //    -IMUs[BodyPart.UpperArmLeft].RotY_Q, IMUs[BodyPart.UpperArmLeft].RotW_Q);
+        //m_LowerArmLeft.rotation = new Quaternion(IMUs[BodyPart.LowerArmLeft].RotZ_Q, -IMUs[BodyPart.LowerArmLeft].RotX_Q,
+        //    -IMUs[BodyPart.LowerArmLeft].RotY_Q, IMUs[BodyPart.LowerArmLeft].RotW_Q);
+        //m_ClavicleRight.rotation = new Quaternion(IMUs[BodyPart.ClavicleRight].RotZ_Q, -IMUs[BodyPart.ClavicleRight].RotX_Q,
+        //    -IMUs[BodyPart.ClavicleRight].RotY_Q, IMUs[BodyPart.ClavicleRight].RotW_Q);
+        //m_UpperArmRight.rotation = new Quaternion(IMUs[BodyPart.UpperArmRight].RotZ_Q, -IMUs[BodyPart.UpperArmRight].RotX_Q,
+        //    -IMUs[BodyPart.UpperArmRight].RotY_Q, IMUs[BodyPart.UpperArmRight].RotW_Q);
+        //m_LowerArmRight.rotation = new Quaternion(IMUs[BodyPart.LowerArmRight].RotZ_Q, -IMUs[BodyPart.LowerArmRight].RotX_Q,
+        //    -IMUs[BodyPart.LowerArmRight].RotY_Q, IMUs[BodyPart.LowerArmRight].RotW_Q);
 
 
-        //m_Neck.Rotate(Changes[0]);
-        //m_ClavicleLeft.Rotate(Changes[1]);
-        //m_UpperArmLeft.Rotate(Changes[2]);
-        //m_LowerArmLeft.Rotate(Changes[3]);
-        //m_ClavicleRight.Rotate(Changes[4]);
-        //m_UpperArmRight.Rotate(Changes[5]);
-        //m_LowerArmRight.Rotate(Changes[6]);
+        m_Neck.localRotation = Quaternion.Inverse(refQuatation[BodyPart.Neck]) * originQuatation[BodyPart.Neck];
+        m_ClavicleLeft.localRotation = Quaternion.Inverse(refQuatation[BodyPart.ClavicleLeft]) * originQuatation[BodyPart.ClavicleLeft];
+        m_UpperArmLeft.localRotation = Quaternion.Inverse(refQuatation[BodyPart.UpperArmLeft]) * originQuatation[BodyPart.UpperArmLeft];
+        m_LowerArmLeft.localRotation = Quaternion.Inverse(refQuatation[BodyPart.LowerArmLeft]) * originQuatation[BodyPart.LowerArmLeft];
+        m_ClavicleRight.localRotation = Quaternion.Inverse(refQuatation[BodyPart.ClavicleRight]) * originQuatation[BodyPart.ClavicleRight];
+        m_UpperArmRight.localRotation = Quaternion.Inverse(refQuatation[BodyPart.UpperArmRight]) * originQuatation[BodyPart.UpperArmRight];
+        m_LowerArmRight.rotation = Quaternion.Inverse(refQuatation[BodyPart.LowerArmRight]) * originQuatation[BodyPart.LowerArmRight];
+
+
+
 
     }
 
