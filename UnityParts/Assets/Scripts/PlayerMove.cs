@@ -78,15 +78,33 @@ public class PlayerMove : MonoBehaviour
     private EndPoint pointEnd;
     private Dictionary<BodyPart, Quaternion> refQuatation;     //参考值
     private Dictionary<BodyPart, Quaternion> originQuatation;  //传感器初始值
+    private Dictionary<BodyPart, Quaternion> defaultValue;     //校准Body初始值
 
 
+    private void Awake()
+    {
+        defaultValue = new Dictionary<BodyPart, Quaternion>(NumOfIMU);
+        defaultValue[BodyPart.Neck] = new Quaternion(m_Neck.transform.rotation.x, m_Neck.transform.rotation.y,
+            m_Neck.transform.rotation.z, m_Neck.transform.rotation.w);
+        defaultValue[BodyPart.ClavicleLeft] = new Quaternion(m_ClavicleLeft.transform.rotation.x, m_ClavicleLeft.transform.rotation.y,
+            m_ClavicleLeft.transform.rotation.z, m_ClavicleLeft.transform.rotation.w);
+        defaultValue[BodyPart.UpperArmLeft] = new Quaternion(m_UpperArmLeft.transform.rotation.x, m_UpperArmLeft.transform.rotation.y,
+            m_UpperArmLeft.transform.rotation.z, m_UpperArmLeft.transform.rotation.w);
+        defaultValue[BodyPart.LowerArmLeft] = new Quaternion(m_LowerArmLeft.transform.rotation.x, m_LowerArmLeft.transform.rotation.y,
+            m_LowerArmLeft.transform.rotation.z, m_LowerArmLeft.transform.rotation.w);
+        defaultValue[BodyPart.ClavicleRight] = new Quaternion(m_ClavicleRight.transform.rotation.x, m_ClavicleRight.transform.rotation.y,
+            m_ClavicleRight.transform.rotation.z, m_ClavicleRight.transform.rotation.w);
+        defaultValue[BodyPart.UpperArmRight] = new Quaternion(m_UpperArmRight.transform.rotation.x, m_UpperArmRight.transform.rotation.y,
+            m_UpperArmRight.transform.rotation.z, m_UpperArmRight.transform.rotation.w);
+        defaultValue[BodyPart.LowerArmRight] = new Quaternion(m_LowerArmRight.transform.rotation.x, m_LowerArmRight.transform.rotation.y,
+            m_LowerArmRight.transform.rotation.z, m_LowerArmRight.transform.rotation.w);
+    }
 
     void Start()
     {
         IMUs = new Dictionary<BodyPart, IMU>(NumOfIMU);
         refQuatation = new Dictionary<BodyPart, Quaternion>(NumOfIMU);
         originQuatation = new Dictionary<BodyPart, Quaternion>(NumOfIMU);
-
         foreach (BodyPart item in Enum.GetValues(typeof(BodyPart)))
         {
             IMUs.Add(item, new IMU());
@@ -94,6 +112,7 @@ public class PlayerMove : MonoBehaviour
             originQuatation.Add(item, Quaternion.identity);
         }
 
+        
 
         string str = "#1;2;3";
         string ss = str.Substring(1);
@@ -122,17 +141,29 @@ public class PlayerMove : MonoBehaviour
         for (int i = 0; i < 10000; i++)
             Debug.LogError("1");
     }
+
+    private void resetMethod()
+    {
+        m_Neck.rotation = defaultValue[BodyPart.Neck];
+        m_ClavicleLeft.rotation = defaultValue[BodyPart.ClavicleLeft];
+        m_UpperArmLeft.rotation = defaultValue[BodyPart.UpperArmLeft];
+        m_LowerArmLeft.rotation = defaultValue[BodyPart.LowerArmLeft];
+        m_ClavicleRight.rotation = defaultValue[BodyPart.ClavicleRight];
+        m_UpperArmRight.rotation = defaultValue[BodyPart.UpperArmRight];
+        m_LowerArmRight.rotation = defaultValue[BodyPart.LowerArmRight];
+        Debug.Log("Reset!");
+    }
     // Update is called once per frame
     void Update()
     {
-        if (Input.GetKey(KeyCode.R))   //重置命令
+        if (Input.GetKeyUp(KeyCode.R))   //重置命令
         {
-            foreach (KeyValuePair<BodyPart, Quaternion> item in refQuatation)
+            foreach (BodyPart item in Enum.GetValues(typeof(BodyPart)))
             {
-                refQuatation[item.Key] = originQuatation[item.Key];
+                originQuatation[item] = refQuatation[item] * defaultValue[item];
             }
+            resetMethod();
         }
-
         setOri(IMUs);
     }
 
@@ -200,7 +231,7 @@ public class PlayerMove : MonoBehaviour
                 //IMUs[i].RotZ_Q = RotZ;
                 //IMUs[i].RotW_Q = RotW;   
                 //refQuatation[(BodyPart)i] = new Quaternion(, -RotX, -RotY, RotW);
-                refQuatation[(BodyPart)i] = new Quaternion(-RotZ, -RotX, -RotY, RotW);
+                refQuatation[(BodyPart)i] = new Quaternion(RotZ, -RotX, RotY, RotW);
 
             }
         }
@@ -240,13 +271,13 @@ public class PlayerMove : MonoBehaviour
         //    -IMUs[BodyPart.LowerArmRight].RotY_Q, IMUs[BodyPart.LowerArmRight].RotW_Q);
 
 
-        m_Neck.localRotation = Quaternion.Inverse(refQuatation[BodyPart.Neck]) * originQuatation[BodyPart.Neck];
-        m_ClavicleLeft.localRotation = Quaternion.Inverse(refQuatation[BodyPart.ClavicleLeft]) * originQuatation[BodyPart.ClavicleLeft];
-        m_UpperArmLeft.localRotation = Quaternion.Inverse(refQuatation[BodyPart.UpperArmLeft]) * originQuatation[BodyPart.UpperArmLeft];
-        m_LowerArmLeft.localRotation = Quaternion.Inverse(refQuatation[BodyPart.LowerArmLeft]) * originQuatation[BodyPart.LowerArmLeft];
-        m_ClavicleRight.localRotation = Quaternion.Inverse(refQuatation[BodyPart.ClavicleRight]) * originQuatation[BodyPart.ClavicleRight];
-        m_UpperArmRight.localRotation = Quaternion.Inverse(refQuatation[BodyPart.UpperArmRight]) * originQuatation[BodyPart.UpperArmRight];
-        m_LowerArmRight.rotation = Quaternion.Inverse(refQuatation[BodyPart.LowerArmRight]) * originQuatation[BodyPart.LowerArmRight];
+        //m_Neck.localRotation = Quaternion.Inverse(refQuatation[BodyPart.Neck]) * originQuatation[BodyPart.Neck];
+        //m_ClavicleLeft.localRotation = Quaternion.Inverse(refQuatation[BodyPart.ClavicleLeft]) * originQuatation[BodyPart.ClavicleLeft];
+        //m_UpperArmLeft.localRotation = Quaternion.Inverse(refQuatation[BodyPart.UpperArmLeft]) * originQuatation[BodyPart.UpperArmLeft];
+        //m_LowerArmLeft.localRotation = Quaternion.Inverse(refQuatation[BodyPart.LowerArmLeft]) * originQuatation[BodyPart.LowerArmLeft];
+        m_ClavicleRight.rotation = Quaternion.Inverse(refQuatation[BodyPart.ClavicleRight]) * originQuatation[BodyPart.ClavicleRight];
+        //m_UpperArmRight.localRotation = Quaternion.Inverse(refQuatation[BodyPart.UpperArmRight]) * originQuatation[BodyPart.UpperArmRight];
+        //m_LowerArmRight.rotation = Quaternion.Inverse(refQuatation[BodyPart.LowerArmRight]) * originQuatation[BodyPart.LowerArmRight];
 
 
 

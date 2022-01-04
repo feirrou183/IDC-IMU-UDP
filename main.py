@@ -113,7 +113,7 @@ def getDataAndDraw(com):
                 KTag = com.read()
                 if (OTag + KTag == b'OK'):
                     xAcc, yAcc, zAcc, quad = Calculate(deviceNumber, DataList, delayTime)  # 一次数据采集完成
-                    # print("device:--", deviceNumber, "--ACC: ", xAcc, "--", yAcc, "--", zAcc)
+                    #print("device:--", deviceNumber, "--ACC: ", xAcc, "--", yAcc, "--", zAcc)
                     # msg = str([deviceNumber, xA, yA, zA, quad])
                     quadStr = [str(qd) for qd in quad]
 
