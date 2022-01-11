@@ -92,6 +92,9 @@ public class PlayerMove : MonoBehaviour
 
     void Start()
     {
+        // 调用摄像头函数
+        ToOpenCamera();
+
         IMUs = new Dictionary<BodyPart, IMU>(NumOfIMU);
         refQuatation = new Dictionary<BodyPart, Quaternion>(NumOfIMU);
         originQuatation = new Dictionary<BodyPart, Quaternion>(NumOfIMU);
@@ -126,6 +129,15 @@ public class PlayerMove : MonoBehaviour
         UnityEngine.Debug.LogWarning("执行完毕！");
 
     }
+
+    /// <summary>
+    /// 打开摄像机
+    /// </summary>
+    public void ToOpenCamera()
+    {
+        StartCoroutine("OpenCamera");
+    }
+
     void test()
     {
         for (int i = 0; i < 10000; i++)
