@@ -36,8 +36,7 @@ public class GLGrid : MonoBehaviour
     }
     void Start()
     {
-        Culcuate();
-        //计算出格子的世界坐标
+        Culcuate();//计算出格子的世界坐标
         DrawChart();
     }
     void Culcuate()
