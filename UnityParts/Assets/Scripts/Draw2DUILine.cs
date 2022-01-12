@@ -6,19 +6,19 @@ using UnityEngine.UI;
 
 public class Draw2DUILine : MonoBehaviour {
 
-    public Color colorLine1 = Color.white;
-    public List<Vector2> listPoints = new List<Vector2>(20);
+    public Color colorLine1 = Color.black;
+    public List<Vector2> listPoints = new List<Vector2>();
 
     public Color32 bgColor = Color.white;
-    public Color32 zeroColor = Color.black;
+    public Color32 zeroColor = Color.red;
 
     [SerializeField]
-    private RawImage bgImage;
+    public RawImage bgImage;
 
     [SerializeField]
-    private float height = 0.34f;
+    public float height = 0.34f;
     [SerializeField]
-    private float width=0.35f;
+    public float width=0.35f;
 
     private Texture2D bgTexture;
     private int widthPixels;
@@ -29,13 +29,16 @@ public class Draw2DUILine : MonoBehaviour {
 
     private System.Random ra;
     private float countTime;
+    private int dataNum;//暂定一次显示10个数据
+    private int dx;//每份数据横坐标间隔
+    private int index;
 
     // Use this for initialization
     void Start () {
 
         ra = new System.Random();
         countTime = 0;
-
+        dataNum = 10;
         //创建背景贴图
         widthPixels = (int)(Screen.width * width);
         heightPixels = (int)(Screen.height * height);
@@ -54,26 +57,50 @@ public class Draw2DUILine : MonoBehaviour {
         Debug.LogWarning("width/Screen.width/widthPixels :" + width.ToString() + " / " + Screen.width.ToString() + " / " + widthPixels.ToString());
         Debug.LogWarning("height/Screen.height/heightPixels :" + height.ToString() + " / " + Screen.height.ToString() + " / " + heightPixels.ToString());
 
+        //横坐标是根据widthPixels确定的
+        dx = widthPixels / dataNum;
+        index = 0;//记录数据下下标
     }
 	
 	// Update is called once per frame
 	void Update () {
 
         countTime += Time.deltaTime;
-        if (countTime >= 2)
+        if (countTime > 1)
         {
-            for (int i = 0; i < listPoints.Count-1; i++)
+            //目前采取的方案是暂时显示10个数据（dataNum）
+            //
+            int x;
+            int y;
+            x = dx * index;
+            index++;
+            y = ra.Next(10, widthPixels);
+            Vector2 point = new Vector2(x, y);
+            listPoints.Add(point);
+            //如果超过dataNum个数据，则依次往后移
+            if (listPoints.Count > dataNum)
             {
-                int x = ra.Next(1, 8);
-                int y = ra.Next(1, 8);
-                Vector2 point = new Vector2(x, y);
-                listPoints[i] = point;
-                Debug.Log("point: " + point.ToString());
+                listPoints.RemoveAt(0);
+                List<Vector2> tmpList = new List<Vector2>();
+                for (int j = 0; j < listPoints.Count; j++)
+                {
+                    int tmpx = dx * j;
+                    Vector2 tmpPoint = new Vector2(tmpx, listPoints[j].y);
+                    tmpList.Add(tmpPoint);
+                }
+                listPoints = tmpList;
+                index = dataNum - 1;
             }
+                    
+            Debug.Log("point: " + point.ToString());
+               
             countTime = 0;
+
         }
-        
-        
+
+
+
+
         // Clear.
         Array.Copy(pixelsBg, pixelsDrawLine, pixelsBg.Length);
 
@@ -89,6 +116,8 @@ public class Draw2DUILine : MonoBehaviour {
 
         bgTexture.SetPixels32(pixelsDrawLine);
         bgTexture.Apply();
+
+        
     }
 
     void DrawLine(Vector2 from, Vector2 to, Color32 color)
