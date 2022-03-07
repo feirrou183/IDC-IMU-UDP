@@ -14,6 +14,7 @@ using System.Net.Sockets;
 using System.Threading;
 using System.IO.Ports;
 using UnityEditorInternal.VersionControl;
+using Drawer;
 
 class IMU
 {
@@ -27,7 +28,7 @@ class IMU
     public float RotW_Q = 0;
 };
 
-enum BodyPart:int
+public enum BodyPart:int
 {
     Neck = 0,
     //ClavicleLeft = 1,
@@ -72,6 +73,10 @@ public class PlayerMove : MonoBehaviour
     private Dictionary<BodyPart, Quaternion> originQuatation;  //传感器初始值
     private Dictionary<BodyPart, Quaternion> defaultValue;     //校准Body初始值
 
+    private DrawController drawController;
+
+    private int timeStep = 0;
+
 
     private void Awake()
     {
@@ -92,6 +97,8 @@ public class PlayerMove : MonoBehaviour
 
     void Start()
     {
+        drawController = GetComponent<DrawController>();
+
         // 调用摄像头函数
         ToOpenCamera();
 
@@ -104,8 +111,6 @@ public class PlayerMove : MonoBehaviour
             refQuatation.Add(item, new Quaternion(0, 0, 0, 1));
             originQuatation.Add(item, new Quaternion(0, 0, 0, 1));
         }
-
-        
 
         string str = "#1;2;3";
         string ss = str.Substring(1);
@@ -135,7 +140,7 @@ public class PlayerMove : MonoBehaviour
     /// </summary>
     public void ToOpenCamera()
     {
-        StartCoroutine("OpenCamera");
+        //StartCoroutine("OpenCamera");
     }
 
     void test()
@@ -146,13 +151,18 @@ public class PlayerMove : MonoBehaviour
 
     private void resetMethod()
     {
+        //重置方法
         m_Neck.rotation = defaultValue[BodyPart.Neck];
         m_Spine.rotation = defaultValue[BodyPart.Spine];
         m_UpperArmLeft.rotation = defaultValue[BodyPart.UpperArmLeft];
         m_LowerArmLeft.rotation = defaultValue[BodyPart.LowerArmLeft];
         m_UpperArmRight.rotation = defaultValue[BodyPart.UpperArmRight];
         m_LowerArmRight.rotation = defaultValue[BodyPart.LowerArmRight];
+
+        timeStep = 0;
+        drawController.ClearGraph();
         Debug.Log("Reset!");
+
     }
     // Update is called once per frame
     void Update()
@@ -237,10 +247,8 @@ public class PlayerMove : MonoBehaviour
                 //refQuatation[(BodyPart)i] = new Quaternion(RotX, RotY, RotZ, RotW);
                 //refQuatation[(BodyPart)i] = new Quaternion(RotZ, -RotX, RotY, RotW);
                 refQuatation[(BodyPart)i] = new Quaternion(RotY, -RotX, RotZ, RotW);
+
                 
-
-
-
 
             }
         }
@@ -263,6 +271,13 @@ public class PlayerMove : MonoBehaviour
                         originQuatation[BodyPart.UpperArmRight];
         m_LowerArmRight.rotation = Quaternion.Inverse(refQuatation[BodyPart.LowerArmRight]) *
                         originQuatation[BodyPart.LowerArmRight];
+
+        foreach (BodyPart item in Enum.GetValues(typeof(BodyPart)))
+        {
+            drawController.drawLine(timeStep, item, refQuatation[item]);
+        }
+        timeStep++;
+            
 
         //m_Neck.rotation = Quaternion.Inverse(originQuatation[BodyPart.Neck]) *
         //               refQuatation[BodyPart.Neck] * defaultValue[BodyPart.Neck];
