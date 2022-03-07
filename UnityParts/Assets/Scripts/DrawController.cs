@@ -79,7 +79,10 @@ namespace Drawer{
 			drawDic[bodyPart].Item1.AddData(new TwoDimensionalData(timeStep, quaternion.eulerAngles.x));
 			drawDic[bodyPart].Item2.AddData(new TwoDimensionalData(timeStep, quaternion.eulerAngles.y));
 			drawDic[bodyPart].Item3.AddData(new TwoDimensionalData(timeStep, quaternion.eulerAngles.z));
+
+			Debug.Log(string.Format("{0}---{1}---{2}", quaternion.eulerAngles.x, quaternion.eulerAngles.y, quaternion.eulerAngles.z));
 		}
+
 
 
 

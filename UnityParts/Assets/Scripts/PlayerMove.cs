@@ -272,9 +272,12 @@ public class PlayerMove : MonoBehaviour
         m_LowerArmRight.rotation = Quaternion.Inverse(refQuatation[BodyPart.LowerArmRight]) *
                         originQuatation[BodyPart.LowerArmRight];
 
-        foreach (BodyPart item in Enum.GetValues(typeof(BodyPart)))
-        {
-            drawController.drawLine(timeStep, item, refQuatation[item]);
+        if(timeStep % 10 ==0)
+        { 
+            foreach (BodyPart item in Enum.GetValues(typeof(BodyPart)))
+            {
+                drawController.drawLine(timeStep, item, refQuatation[item]);
+            }
         }
         timeStep++;
             

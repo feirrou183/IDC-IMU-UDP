@@ -7,8 +7,8 @@ namespace DataVisualization.Charts
     public class Chart : MonoBehaviour
     {
         [Header("Horizontal")]
-        public float minXValue = 0;
-        public float maxXValue = 100;
+        public float minXValue;
+        public float maxXValue;
         public Transform startX;
         public Transform endX;
         public List<Transform> pointsOnX;
@@ -16,8 +16,8 @@ namespace DataVisualization.Charts
 
 
         [Header("Vertical")]
-        public float minYValue = -180;
-        public float maxYValue = 180;
+        public float minYValue = 0;
+        public float maxYValue = 360;
         public Transform startY;
         public Transform endY;
         public List<Transform> pointsOnY;
@@ -42,6 +42,10 @@ namespace DataVisualization.Charts
         private void Start()
         {
             Clear();
+            minXValue = 0;
+            maxXValue = 100;
+            minYValue = 0;
+            maxYValue = 360;
         }
         
         //清除数据

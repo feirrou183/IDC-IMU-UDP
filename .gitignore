@@ -1,0 +1,7 @@
+
+UnityParts/Library/
+UnityParts/ProjectSettings/
+UnityParts/Temp/
+*.csproj
+*.sln
+*.json
