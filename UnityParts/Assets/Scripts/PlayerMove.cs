@@ -31,13 +31,13 @@ class IMU
 public enum BodyPart:int
 {
     Neck = 0,
+    Spine = 1,
     //ClavicleLeft = 1,
-    UpperArmLeft = 1,
-    LowerArmLeft = 2,
+    UpperArmLeft = 2,
+    UpperArmRight = 3,
+    LowerArmLeft = 4,
     //ClavicleRight= 4,
-    UpperArmRight= 3,
-    LowerArmRight= 4,
-    Spine =  5
+    LowerArmRight= 5,
 }
 
 
@@ -123,7 +123,7 @@ public class PlayerMove : MonoBehaviour
         point = new IPEndPoint(IPAddress.Any, 0);//用来保存发送方的ip和端口号
         pointEnd = (EndPoint)point;
 
-        UnityEngine.Debug.LogWarning("服务端已经开启");
+        Debug.LogWarning("服务端已经开启");
         Thread t = new Thread(ReciveMsg);//开启接收消息线程
         //t.IsBackground = true;
         t.Start();
@@ -131,7 +131,7 @@ public class PlayerMove : MonoBehaviour
         // Thread t2 = new Thread(sendMsg);//开启发送消息线程
         // t2.Start();
 
-        UnityEngine.Debug.LogWarning("执行完毕！");
+        Debug.LogWarning("执行完毕！");
 
     }
 
@@ -198,9 +198,9 @@ public class PlayerMove : MonoBehaviour
             byte[] buffer = new byte[1024];
             int length = server.ReceiveFrom(buffer, ref pointEnd);//接收数据报
             string message = Encoding.UTF8.GetString(buffer, 0, length);
-            UnityEngine.Debug.LogWarning(message);
+            //Debug.LogWarning(message);
             UpdateVal(message);
-            UnityEngine.Debug.LogWarning(point.ToString() + message);
+            //UnityEngine.Debug.LogWarning(point.ToString() + message);
             //UnityEngine.Debug.LogWarning(string.Format("imu_Neck.RotX_Q: {0}, {1}, {2}, {3}", IMUs[1].RotW_Q, IMUs[1].RotX_Q, IMUs[1].RotY_Q, IMUs[1].RotZ_Q));
             if (closeFlag) break;
         }
@@ -212,7 +212,7 @@ public class PlayerMove : MonoBehaviour
     /// s的格式 “#1;2;3;4;5;...;28”  共有28个数据，（7IMU，每个IMU4个数据代表四元数w,x,y,z)
     void UpdateVal(string s)
     {
-        UnityEngine.Debug.LogWarning("UpdateVal");
+        //UnityEngine.Debug.LogWarning("UpdateVal");
         if (s == null) return;
         char leading = s[0];
         if (leading != '#') return;
@@ -222,7 +222,7 @@ public class PlayerMove : MonoBehaviour
 
         if (strArray.Length < NumOfQuaternion)
         {
-            UnityEngine.Debug.LogError("strArray's length i less than 1");
+            Debug.LogError("strArray's length i less than 1");
         }
         else
         {
@@ -272,14 +272,18 @@ public class PlayerMove : MonoBehaviour
         m_LowerArmRight.rotation = Quaternion.Inverse(refQuatation[BodyPart.LowerArmRight]) *
                         originQuatation[BodyPart.LowerArmRight];
 
-        if(timeStep % 10 ==0)
-        { 
-            foreach (BodyPart item in Enum.GetValues(typeof(BodyPart)))
-            {
-                drawController.drawLine(timeStep, item, refQuatation[item]);
-            }
+        
+        foreach (BodyPart item in Enum.GetValues(typeof(BodyPart)))
+        {
+            drawController.drawLine(timeStep, item, refQuatation[item]);
         }
+        
         timeStep++;
+        if (timeStep >= 1000)
+        {
+            timeStep = 0;
+            drawController.ClearGraph();
+        }
             
 
         //m_Neck.rotation = Quaternion.Inverse(originQuatation[BodyPart.Neck]) *
