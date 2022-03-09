@@ -15,6 +15,7 @@ using System.Threading;
 using System.IO.Ports;
 using UnityEditorInternal.VersionControl;
 using Drawer;
+using Player;
 
 class IMU
 {
@@ -74,6 +75,7 @@ public class PlayerMove : MonoBehaviour
     private Dictionary<BodyPart, Quaternion> defaultValue;     //校准Body初始值
 
     private DrawController drawController;
+    private PlayerMoveController playerMoveController = new PlayerMoveController();
 
     private int timeStep = 0;
 
@@ -93,6 +95,13 @@ public class PlayerMove : MonoBehaviour
             m_UpperArmRight.transform.rotation.z, m_UpperArmRight.transform.rotation.w);
         defaultValue[BodyPart.LowerArmRight] = new Quaternion(m_LowerArmRight.transform.rotation.x, m_LowerArmRight.transform.rotation.y,
             m_LowerArmRight.transform.rotation.z, m_LowerArmRight.transform.rotation.w);
+
+        playerMoveController.Neck = m_Neck;
+        playerMoveController.Spine = m_Spine;
+        playerMoveController.UpperArmLeft = m_UpperArmLeft;
+        playerMoveController.UpperArmRight = m_UpperArmRight;
+        playerMoveController.LowerArmLeft = m_LowerArmLeft;
+        playerMoveController.LowerArmRight = m_LowerArmRight;
     }
 
     void Start()
@@ -259,18 +268,18 @@ public class PlayerMove : MonoBehaviour
     {
 
 
-        m_Neck.rotation = Quaternion.Inverse(refQuatation[BodyPart.Neck]) *
-                        originQuatation[BodyPart.Neck];
-        m_Spine.rotation = Quaternion.Inverse(refQuatation[BodyPart.Spine]) *
-                        originQuatation[BodyPart.Spine];
-        m_UpperArmLeft.rotation = Quaternion.Inverse(refQuatation[BodyPart.UpperArmLeft]) *
-                        originQuatation[BodyPart.UpperArmLeft] ;
-        m_LowerArmLeft.rotation = Quaternion.Inverse(refQuatation[BodyPart.LowerArmLeft]) *
-                        originQuatation[BodyPart.LowerArmLeft];
-        m_UpperArmRight.rotation = Quaternion.Inverse(refQuatation[BodyPart.UpperArmRight]) *
-                        originQuatation[BodyPart.UpperArmRight];
-        m_LowerArmRight.rotation = Quaternion.Inverse(refQuatation[BodyPart.LowerArmRight]) *
-                        originQuatation[BodyPart.LowerArmRight];
+        m_Neck.rotation = playerMoveController.CheckLimitation(BodyPart.Neck,Quaternion.Inverse(refQuatation[BodyPart.Neck]) *
+                        originQuatation[BodyPart.Neck]);
+        m_Spine.rotation = playerMoveController.CheckLimitation(BodyPart.Spine,Quaternion.Inverse(refQuatation[BodyPart.Spine]) *
+                        originQuatation[BodyPart.Spine]);
+        m_UpperArmLeft.rotation = playerMoveController.CheckLimitation(BodyPart.UpperArmLeft,Quaternion.Inverse(refQuatation[BodyPart.UpperArmLeft]) *
+                        originQuatation[BodyPart.UpperArmLeft] );
+        m_LowerArmLeft.rotation = playerMoveController.CheckLimitation(BodyPart.LowerArmLeft, Quaternion.Inverse(refQuatation[BodyPart.LowerArmLeft]) *
+                        originQuatation[BodyPart.LowerArmLeft]);
+        m_UpperArmRight.rotation = playerMoveController.CheckLimitation(BodyPart.UpperArmRight,Quaternion.Inverse(refQuatation[BodyPart.UpperArmRight]) *
+                        originQuatation[BodyPart.UpperArmRight]);
+        m_LowerArmRight.rotation = playerMoveController.CheckLimitation(BodyPart.LowerArmRight,Quaternion.Inverse(refQuatation[BodyPart.LowerArmRight]) *
+                        originQuatation[BodyPart.LowerArmRight]);
 
         
         foreach (BodyPart item in Enum.GetValues(typeof(BodyPart)))
