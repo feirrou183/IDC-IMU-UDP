@@ -77,6 +77,10 @@ public class PlayerMove : MonoBehaviour
 
     private int timeStep = 0;
 
+    private bool saveFlag = false;      //保存文件标志位，true:不断向字典内写入四元数
+
+    private Dictionary<BodyPart, List<Quaternion>> saveFile;
+
 
     private void Awake()
     {
@@ -117,6 +121,7 @@ public class PlayerMove : MonoBehaviour
             IMUs.Add(item, new IMU());
             refQuatation.Add(item, new Quaternion(0, 0, 0, 1));
             originQuatation.Add(item, new Quaternion(0, 0, 0, 1));
+            saveFile.Add(item, new List<Quaternion>());
         }
 
         string str = "#1;2;3";
@@ -182,7 +187,20 @@ public class PlayerMove : MonoBehaviour
             }
             resetMethod();
         }
+        if (Input.GetKeyUp(KeyCode.S))
+        {
+            //保存文件
+
+        }
         setOri(IMUs);
+    }
+
+    void SaveFile()
+    { 
+        //写csv文件
+    
+    
+    
     }
 
     void sendMsg()
@@ -255,9 +273,11 @@ public class PlayerMove : MonoBehaviour
                 //refQuatation[(BodyPart)i] = new Quaternion(RotX, RotY, RotZ, RotW);
                 //refQuatation[(BodyPart)i] = new Quaternion(RotZ, -RotX, RotY, RotW);
                 refQuatation[(BodyPart)i] = new Quaternion(RotY, -RotX, RotZ, RotW);
-
+                if(saveFlag)
+                {
+                    saveFile[(BodyPart)i].Add(refQuatation[(BodyPart)i]);
+                }
                 
-
             }
         }
     }
