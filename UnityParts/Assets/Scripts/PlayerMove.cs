@@ -16,6 +16,7 @@ using System.IO.Ports;
 using UnityEditorInternal.VersionControl;
 using Drawer;
 using Player;
+using System.IO;
 
 class IMU
 {
@@ -76,10 +77,11 @@ public class PlayerMove : MonoBehaviour
     private PlayerMoveController playerMoveController = new PlayerMoveController();
 
     private int timeStep = 0;
+    private int timeCount = 0;
 
     private bool saveFlag = false;      //保存文件标志位，true:不断向字典内写入四元数
 
-    private Dictionary<BodyPart, List<Quaternion>> saveFile;
+    private Dictionary<int,Dictionary<BodyPart, Quaternion>> saveFile;
 
 
     private void Awake()
@@ -116,12 +118,12 @@ public class PlayerMove : MonoBehaviour
         IMUs = new Dictionary<BodyPart, IMU>(NumOfIMU);
         refQuatation = new Dictionary<BodyPart, Quaternion>(NumOfIMU);
         originQuatation = new Dictionary<BodyPart, Quaternion>(NumOfIMU);
+        saveFile = new Dictionary<int, Dictionary<BodyPart, Quaternion>>();
         foreach (BodyPart item in Enum.GetValues(typeof(BodyPart)))
         {
             IMUs.Add(item, new IMU());
             refQuatation.Add(item, new Quaternion(0, 0, 0, 1));
             originQuatation.Add(item, new Quaternion(0, 0, 0, 1));
-            saveFile.Add(item, new List<Quaternion>());
         }
 
         string str = "#1;2;3";
@@ -190,17 +192,47 @@ public class PlayerMove : MonoBehaviour
         if (Input.GetKeyUp(KeyCode.S))
         {
             //保存文件
-
+            SaveCsvFile();
         }
         setOri(IMUs);
     }
 
-    void SaveFile()
-    { 
+    void SaveCsvFile()
+    {
         //写csv文件
-    
-    
-    
+        string vFileName = "F:\\IDC\\IDC-IMU-UDP\\Data\\data.csv";
+        FileStream vFileStream = new FileStream(vFileName, FileMode.OpenOrCreate, FileAccess.Write);
+        using (StreamWriter vStreamWriter = new StreamWriter(vFileStream, Encoding.UTF8))
+        {
+            StringBuilder vStringBuilder = new StringBuilder();
+            vStringBuilder.Append("00");
+            vStringBuilder.Append("01");
+            vStringBuilder.Append("02");
+            vStringBuilder.Append("03");
+            vStringBuilder.Append("04");
+            vStringBuilder.Append("05");
+            vStringBuilder.AppendLine("");
+
+            for (int i = 1; i < saveFile.Count; i++)
+            {
+
+                vStringBuilder.Append(string.Format("{},",saveFile[i][BodyPart.Neck].ToString()));
+                vStringBuilder.Append(string.Format("{},", saveFile[i][BodyPart.Spine].ToString()));
+                vStringBuilder.Append(string.Format("{},", saveFile[i][BodyPart.UpperArmLeft].ToString()));
+                vStringBuilder.Append(string.Format("{},", saveFile[i][BodyPart.UpperArmRight].ToString()));
+                vStringBuilder.Append(string.Format("{},", saveFile[i][BodyPart.LowerArmLeft].ToString()));
+                vStringBuilder.Append(string.Format("{},", saveFile[i][BodyPart.LowerArmRight].ToString()));
+                //vStringBuilder.Append($"{i + 10},");
+                //vStringBuilder.Append($"\"{i},{i * 10},{i * 100}\"");
+                vStringBuilder.AppendLine("");
+            }
+
+            vStreamWriter.Write(vStringBuilder);
+            vStreamWriter.Flush();
+            vStreamWriter.Close();
+        }
+
+
     }
 
     void sendMsg()
@@ -251,9 +283,9 @@ public class PlayerMove : MonoBehaviour
         }
         else
         {
-
-            //for (int i = 0; i < IMUs.Count; i++)
-            for (int i = 0; i < 7; i++)
+            timeCount += 1;
+                //for (int i = 0; i < IMUs.Count; i++)
+                for (int i = 0; i < 7; i++)
             {
                 int index = i * 4;
                 float RotX = (float)Math.Round(float.Parse(strArray[index]),1);
@@ -272,10 +304,17 @@ public class PlayerMove : MonoBehaviour
                 //IMUs[i].RotW_Q = RotW;   
                 //refQuatation[(BodyPart)i] = new Quaternion(RotX, RotY, RotZ, RotW);
                 //refQuatation[(BodyPart)i] = new Quaternion(RotZ, -RotX, RotY, RotW);
-                refQuatation[(BodyPart)i] = new Quaternion(RotY, -RotX, RotZ, RotW);
-                if(saveFlag)
+                Quaternion data = new Quaternion(RotY, -RotX, RotZ, RotW);
+
+                refQuatation[(BodyPart)i] = data;
+
+                if (saveFlag)  //数据存入
                 {
-                    saveFile[(BodyPart)i].Add(refQuatation[(BodyPart)i]);
+                    if (!saveFile.ContainsKey(timeCount))
+                    {
+                        saveFile[timeCount] = new Dictionary<BodyPart, Quaternion>();
+                    }
+                    saveFile[timeCount][(BodyPart)i] = data;
                 }
                 
             }
