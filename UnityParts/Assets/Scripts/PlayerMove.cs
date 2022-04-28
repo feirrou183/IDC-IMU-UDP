@@ -183,7 +183,7 @@ public class PlayerMove : MonoBehaviour
         {
             foreach (BodyPart item in Enum.GetValues(typeof(BodyPart)))
             {
-                originQuatation[item] = refQuatation[item] * defaultValue[item];
+                originQuatation[item] = Matrix2Quad(Quad2Matrix(refQuatation[item]) * Quad2Matrix(defaultValue[item]));
             }
             resetMethod();
         }
