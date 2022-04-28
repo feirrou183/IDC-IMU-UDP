@@ -12,8 +12,6 @@ using System.Threading.Tasks;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
-using System.IO.Ports;
-using UnityEditorInternal.VersionControl;
 using Drawer;
 using Player;
 using System.IO;
@@ -33,11 +31,11 @@ class IMU
 public enum BodyPart:int
 {
     Neck = 0,
-    Spine = 1,
+    Spine = 2,
+    UpperArmRight = 1,
+    LowerArmRight = 3,
     UpperArmLeft = 4,
-    LowerArmLeft = 5,
-    UpperArmRight = 2,
-    LowerArmRight= 3,
+    LowerArmLeft = 5
 }
 
 
@@ -154,7 +152,7 @@ public class PlayerMove : MonoBehaviour
     /// </summary>
     public void ToOpenCamera()
     {
-        StartCoroutine("OpenCamera");
+        //StartCoroutine("OpenCamera");
     }
 
     void test()
@@ -205,31 +203,33 @@ public class PlayerMove : MonoBehaviour
         using (StreamWriter vStreamWriter = new StreamWriter(vFileStream, Encoding.UTF8))
         {
             StringBuilder vStringBuilder = new StringBuilder();
-            vStringBuilder.Append("00");
-            vStringBuilder.Append("01");
-            vStringBuilder.Append("02");
-            vStringBuilder.Append("03");
-            vStringBuilder.Append("04");
-            vStringBuilder.Append("05");
-            vStringBuilder.AppendLine("");
+            //vStringBuilder.Append("00");
+            //vStringBuilder.Append("01");
+            //vStringBuilder.Append("02");
+            //vStringBuilder.Append("03");
+            //vStringBuilder.Append("04");
+            //vStringBuilder.Append("05");
+            //vStringBuilder.AppendLine("");
 
-            for (int i = 1; i < saveFile.Count; i++)
+            for (int i = 1; i < saveFile.Count-1; i++)
             {
 
-                vStringBuilder.Append(string.Format("{},",saveFile[i][BodyPart.Neck].ToString()));
-                vStringBuilder.Append(string.Format("{},", saveFile[i][BodyPart.Spine].ToString()));
-                vStringBuilder.Append(string.Format("{},", saveFile[i][BodyPart.UpperArmLeft].ToString()));
-                vStringBuilder.Append(string.Format("{},", saveFile[i][BodyPart.UpperArmRight].ToString()));
-                vStringBuilder.Append(string.Format("{},", saveFile[i][BodyPart.LowerArmLeft].ToString()));
-                vStringBuilder.Append(string.Format("{},", saveFile[i][BodyPart.LowerArmRight].ToString()));
+                //vStringBuilder.Append(string.Format("{0},",saveFile[i][BodyPart.Neck].ToString()));
+                //vStringBuilder.Append(string.Format("{0},", saveFile[i][BodyPart.Spine].ToString()));
+                vStringBuilder.Append(string.Format("{0},", saveFile[i][BodyPart.UpperArmLeft].ToString()));
+                vStringBuilder.Append(string.Format("{0},", saveFile[i][BodyPart.UpperArmRight].ToString()));
+                vStringBuilder.Append(string.Format("{0},", saveFile[i][BodyPart.LowerArmLeft].ToString()));
+                vStringBuilder.Append(string.Format("{0},", saveFile[i][BodyPart.LowerArmRight].ToString()));
                 //vStringBuilder.Append($"{i + 10},");
                 //vStringBuilder.Append($"\"{i},{i * 10},{i * 100}\"");
+
                 vStringBuilder.AppendLine("");
             }
 
             vStreamWriter.Write(vStringBuilder);
             vStreamWriter.Flush();
             vStreamWriter.Close();
+            Debug.Log("SaveFile");
         }
 
 
@@ -288,13 +288,13 @@ public class PlayerMove : MonoBehaviour
                 for (int i = 0; i < 7; i++)
             {
                 int index = i * 4;
-                float RotX = (float)Math.Round(float.Parse(strArray[index]),1);
-                float RotY = (float)Math.Round(float.Parse(strArray[index + 1]),1);
-                float RotZ = (float)Math.Round(float.Parse(strArray[index + 2]),1);
-                float RotW = (float)Math.Round(float.Parse(strArray[index + 3]),1);
+                float RotX = float.Parse(strArray[index]);
+                float RotY = float.Parse(strArray[index + 1]);
+                float RotZ = float.Parse(strArray[index + 2]);
+                float RotW = float.Parse(strArray[index + 3]);
 
                 if ((RotX + RotY + RotZ + RotW) == 0) continue;
-
+                
                 //Vector3 NewAngle = new Quaternion(RotX, RotY, RotZ, RotW).eulerAngles;
                 //Vector3 OldAngle = new Quaternion(IMUs[i].RotX_Q, IMUs[i].RotY_Q, IMUs[i].RotZ_Q, IMUs[i].RotW_Q).eulerAngles;
                 //Changes[i] =(NewAngle - OldAngle);
@@ -304,7 +304,41 @@ public class PlayerMove : MonoBehaviour
                 //IMUs[i].RotW_Q = RotW;   
                 //refQuatation[(BodyPart)i] = new Quaternion(RotX, RotY, RotZ, RotW);
                 //refQuatation[(BodyPart)i] = new Quaternion(RotZ, -RotX, RotY, RotW);
-                Quaternion data = new Quaternion(RotY, -RotX, RotZ, RotW);
+                Quaternion data = new Quaternion(RotX, RotY, RotZ, RotW);
+                Vector3 angle;
+
+
+                switch ((BodyPart)i)
+                {
+                    case BodyPart.UpperArmLeft:
+                        angle = new Vector3(data.eulerAngles.z, data.eulerAngles.y, 180 - data.eulerAngles.x);
+                        data.eulerAngles = angle;
+                        break;
+
+                    case BodyPart.LowerArmLeft:
+                        angle = new Vector3(-data.eulerAngles.y, 180 - data.eulerAngles.x, -data.eulerAngles.z);
+                        data.eulerAngles = angle;
+                        break;
+
+                    case BodyPart.UpperArmRight:
+                        angle = new Vector3( data.eulerAngles.x, data.eulerAngles.z, - data.eulerAngles.y);
+                        data.eulerAngles = angle;
+                        break;
+
+                    case BodyPart.LowerArmRight:
+                        angle = new Vector3( - data.eulerAngles.x,  data.eulerAngles.z,  -data.eulerAngles.y);
+                        data.eulerAngles = angle;
+                        break;
+
+                    default:
+                        angle = new Vector3(data.eulerAngles.x, data.eulerAngles.y, data.eulerAngles.z);
+                        data.eulerAngles = angle;
+                        break;
+
+                }
+
+
+
 
                 refQuatation[(BodyPart)i] = data;
 
@@ -326,31 +360,50 @@ public class PlayerMove : MonoBehaviour
     {
 
 
-        //m_Neck.rotation = playerMoveController.CheckLimitation(BodyPart.Neck,Quaternion.Inverse(refQuatation[BodyPart.Neck]) *
+        //m_Neck.rotation = playerMoveController.CheckLimitation(BodyPart.Neck, Quaternion.Inverse(refQuatation[BodyPart.Neck]) *
         //                originQuatation[BodyPart.Neck]);
-        //m_Spine.rotation = playerMoveController.CheckLimitation(BodyPart.Spine,Quaternion.Inverse(refQuatation[BodyPart.Spine]) *
+        //m_Spine.rotation = playerMoveController.CheckLimitation(BodyPart.Spine, Quaternion.Inverse(refQuatation[BodyPart.Spine]) *
         //                originQuatation[BodyPart.Spine]);
-        //m_UpperArmLeft.rotation = playerMoveController.CheckLimitation(BodyPart.UpperArmLeft,Quaternion.Inverse(refQuatation[BodyPart.UpperArmLeft]) *
-        //                originQuatation[BodyPart.UpperArmLeft] );
+        //m_UpperArmLeft.rotation = playerMoveController.CheckLimitation(BodyPart.UpperArmLeft, Quaternion.Inverse(refQuatation[BodyPart.UpperArmLeft]) *
+        //                originQuatation[BodyPart.UpperArmLeft]);
         //m_LowerArmLeft.rotation = playerMoveController.CheckLimitation(BodyPart.LowerArmLeft, Quaternion.Inverse(refQuatation[BodyPart.LowerArmLeft]) *
         //                originQuatation[BodyPart.LowerArmLeft]);
-        //m_UpperArmRight.rotation = playerMoveController.CheckLimitation(BodyPart.UpperArmRight,Quaternion.Inverse(refQuatation[BodyPart.UpperArmRight]) *
+        //m_UpperArmRight.rotation = playerMoveController.CheckLimitation(BodyPart.UpperArmRight, Quaternion.Inverse(refQuatation[BodyPart.UpperArmRight]) *
         //                originQuatation[BodyPart.UpperArmRight]);
-        //m_LowerArmRight.rotation = playerMoveController.CheckLimitation(BodyPart.LowerArmRight,Quaternion.Inverse(refQuatation[BodyPart.LowerArmRight]) *
+        //m_LowerArmRight.rotation = playerMoveController.CheckLimitation(BodyPart.LowerArmRight, Quaternion.Inverse(refQuatation[BodyPart.LowerArmRight]) *
         //                originQuatation[BodyPart.LowerArmRight]);
 
-        m_Neck.rotation = Quaternion.Inverse(refQuatation[BodyPart.Neck]) *
-                        originQuatation[BodyPart.Neck];
-        m_Spine.rotation = Quaternion.Inverse(refQuatation[BodyPart.Spine]) *
-                        originQuatation[BodyPart.Spine];
-        m_UpperArmLeft.rotation = Quaternion.Inverse(refQuatation[BodyPart.UpperArmLeft]) *
-                        originQuatation[BodyPart.UpperArmLeft];
-        m_LowerArmLeft.rotation = Quaternion.Inverse(refQuatation[BodyPart.LowerArmLeft]) *
-                        originQuatation[BodyPart.LowerArmLeft];
-        m_UpperArmRight.rotation = Quaternion.Inverse(refQuatation[BodyPart.UpperArmRight]) *
-                        originQuatation[BodyPart.UpperArmRight];
-        m_LowerArmRight.rotation = Quaternion.Inverse(refQuatation[BodyPart.LowerArmRight]) *
-                        originQuatation[BodyPart.LowerArmRight];
+
+
+
+        //m_Neck.rotation = Quaternion.Inverse(refQuatation[BodyPart.Neck]) *
+        //                originQuatation[BodyPart.Neck];
+        //m_Spine.rotation = Quaternion.Inverse(refQuatation[BodyPart.Spine]) *
+        //                originQuatation[BodyPart.Spine];
+        //m_UpperArmLeft.rotation = Quaternion.Inverse(refQuatation[BodyPart.UpperArmLeft]) *
+        //                originQuatation[BodyPart.UpperArmLeft];
+        //m_LowerArmLeft.rotation = Quaternion.Inverse(refQuatation[BodyPart.LowerArmLeft]) *
+        //                originQuatation[BodyPart.LowerArmLeft];
+        //m_UpperArmRight.rotation = Quaternion.Inverse(refQuatation[BodyPart.UpperArmRight]) *
+        //                originQuatation[BodyPart.UpperArmRight];
+        //m_LowerArmRight.rotation = Quaternion.Inverse(refQuatation[BodyPart.LowerArmRight]) *
+        //                originQuatation[BodyPart.LowerArmRight];
+
+
+
+
+        m_Neck.rotation = Matrix2Quad(Matrix4x4.Inverse(Quad2Matrix(refQuatation[BodyPart.Neck])) * Quad2Matrix(originQuatation[BodyPart.Neck]));
+
+        m_Spine.rotation = Matrix2Quad(Matrix4x4.Inverse(Quad2Matrix(refQuatation[BodyPart.Spine])) * Quad2Matrix(originQuatation[BodyPart.Spine]));
+
+        m_UpperArmLeft.rotation = Matrix2Quad(Matrix4x4.Inverse(Quad2Matrix(refQuatation[BodyPart.UpperArmLeft])) * Quad2Matrix(originQuatation[BodyPart.UpperArmLeft]));
+
+        m_LowerArmLeft.rotation = Matrix2Quad(Matrix4x4.Inverse(Quad2Matrix(refQuatation[BodyPart.LowerArmLeft])) * Quad2Matrix(originQuatation[BodyPart.LowerArmLeft]));
+
+        m_UpperArmRight.rotation = Matrix2Quad(Matrix4x4.Inverse(Quad2Matrix(refQuatation[BodyPart.UpperArmRight])) * Quad2Matrix(originQuatation[BodyPart.UpperArmRight]));
+
+        m_LowerArmRight.rotation = Matrix2Quad(Matrix4x4.Inverse(Quad2Matrix(refQuatation[BodyPart.LowerArmRight])) * Quad2Matrix(originQuatation[BodyPart.LowerArmRight]));
+
 
 
         foreach (BodyPart item in Enum.GetValues(typeof(BodyPart)))
@@ -379,6 +432,28 @@ public class PlayerMove : MonoBehaviour
         //m_LowerArmRight.rotation = Quaternion.Inverse(originQuatation[BodyPart.LowerArmRight]) *
         //                refQuatation[BodyPart.LowerArmRight] * defaultValue[BodyPart.LowerArmRight];
     }
+
+
+    //四元数转旋转矩阵
+    private Matrix4x4 Quad2Matrix(Quaternion q)
+    {
+        Matrix4x4 rot = new Matrix4x4();
+
+        rot.SetTRS(new Vector3(0, 0, 0), q, new Vector3(1, 1, 1));
+
+        return rot;
+    }
+
+    //旋转矩阵转四元数
+    private Quaternion Matrix2Quad(Matrix4x4 rot)
+    {
+        Vector4 vy = rot.GetColumn(1);
+        Vector4 vz = rot.GetColumn(2);
+
+        Quaternion quad = Quaternion.LookRotation(new Vector3(vz.x, vz.y, vz.z), new Vector3(vy.x, vy.y, vy.z));
+        return quad;
+    }
+
 
     private void OnDestroy()
     {

@@ -5,3 +5,4 @@ UnityParts/Temp/
 *.csproj
 *.sln
 *.json
+Data/data.csv

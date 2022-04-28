@@ -113,7 +113,9 @@ def getDataAndDraw(com):
                 KTag = com.read()
                 if (OTag + KTag == b'OK'):
                     xAcc, yAcc, zAcc, quad = Calculate(deviceNumber, DataList, delayTime)  # 一次数据采集完成
-                    #print("device:--", deviceNumber, "--ACC: ", xAcc, "--", yAcc, "--", zAcc)
+                    if(deviceNumber == 4):
+                        #print("device:--", deviceNumber, "--Acc: ", xAcc, "--", yAcc, "--", zAcc)
+                        print("device:--", deviceNumber, "--quad: ",quad)
                     # msg = str([deviceNumber, xA, yA, zA, quad])
                     quadStr = [str(qd) for qd in quad]
 
@@ -135,10 +137,9 @@ def getDataAndDraw(com):
                     Count += 1
                 else:
                     print("Error")
-                    continue
         else:
             print("Error")
-            continue
+        com.flush()
     endTime = time.time()
 
     print(Count, "--", endTime - startTime)
