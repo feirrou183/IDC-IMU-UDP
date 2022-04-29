@@ -31,8 +31,8 @@ class IMU
 public enum BodyPart:int
 {
     Neck = 0,
-    Spine = 2,
-    UpperArmRight = 1,
+    Spine = 1,
+    UpperArmRight = 2,
     LowerArmRight = 3,
     UpperArmLeft = 4,
     LowerArmLeft = 5
@@ -77,9 +77,9 @@ public class PlayerMove : MonoBehaviour
     private int timeStep = 0;
     private int timeCount = 0;
 
-    private bool saveFlag = false;      //保存文件标志位，true:不断向字典内写入四元数
+    private bool saveFlag = true;      //保存文件标志位，true:不断向字典内写入四元数
 
-    private Dictionary<int,Dictionary<BodyPart, Quaternion>> saveFile;
+    private List<Dictionary<BodyPart, Quaternion>> saveFile;
 
 
     private void Awake()
@@ -116,7 +116,7 @@ public class PlayerMove : MonoBehaviour
         IMUs = new Dictionary<BodyPart, IMU>(NumOfIMU);
         refQuatation = new Dictionary<BodyPart, Quaternion>(NumOfIMU);
         originQuatation = new Dictionary<BodyPart, Quaternion>(NumOfIMU);
-        saveFile = new Dictionary<int, Dictionary<BodyPart, Quaternion>>();
+        saveFile = new List<Dictionary<BodyPart, Quaternion>>();
         foreach (BodyPart item in Enum.GetValues(typeof(BodyPart)))
         {
             IMUs.Add(item, new IMU());
@@ -197,32 +197,33 @@ public class PlayerMove : MonoBehaviour
 
     void SaveCsvFile()
     {
+
+        string location = System.Environment.CurrentDirectory;
+
+        string fileName = string.Format("{0}{1}{2}{3}{4}.csv", DateTime.Now.Year, DateTime.Now.Month, 
+            DateTime.Now.Hour,DateTime.Now.Minute, DateTime.Now.Second);
         //写csv文件
-        string vFileName = "F:\\IDC\\IDC-IMU-UDP\\Data\\data.csv";
-        FileStream vFileStream = new FileStream(vFileName, FileMode.OpenOrCreate, FileAccess.Write);
+        string DataPath = location + "\\Data";
+
+        //string vFileName = "F:\\IDC\\IDC-IMU-UDP\\Data\\data.csv";
+        if (!Directory.Exists(DataPath))
+        {
+            Directory.CreateDirectory(DataPath);
+        }
+        string vFileName = DataPath + "\\" + fileName;
+
+        FileStream vFileStream = new FileStream(vFileName, FileMode.CreateNew, FileAccess.Write);
         using (StreamWriter vStreamWriter = new StreamWriter(vFileStream, Encoding.UTF8))
         {
             StringBuilder vStringBuilder = new StringBuilder();
-            //vStringBuilder.Append("00");
-            //vStringBuilder.Append("01");
-            //vStringBuilder.Append("02");
-            //vStringBuilder.Append("03");
-            //vStringBuilder.Append("04");
-            //vStringBuilder.Append("05");
-            //vStringBuilder.AppendLine("");
-
-            for (int i = 1; i < saveFile.Count-1; i++)
+            foreach (var Parts in saveFile)
             {
-
-                //vStringBuilder.Append(string.Format("{0},",saveFile[i][BodyPart.Neck].ToString()));
-                //vStringBuilder.Append(string.Format("{0},", saveFile[i][BodyPart.Spine].ToString()));
-                vStringBuilder.Append(string.Format("{0},", saveFile[i][BodyPart.UpperArmLeft].ToString()));
-                vStringBuilder.Append(string.Format("{0},", saveFile[i][BodyPart.UpperArmRight].ToString()));
-                vStringBuilder.Append(string.Format("{0},", saveFile[i][BodyPart.LowerArmLeft].ToString()));
-                vStringBuilder.Append(string.Format("{0},", saveFile[i][BodyPart.LowerArmRight].ToString()));
-                //vStringBuilder.Append($"{i + 10},");
-                //vStringBuilder.Append($"\"{i},{i * 10},{i * 100}\"");
-
+                vStringBuilder.Append(string.Format("{0},", Parts[BodyPart.Neck].ToString()));
+                vStringBuilder.Append(string.Format("{0},", Parts[BodyPart.Spine].ToString()));
+                vStringBuilder.Append(string.Format("{0},", Parts[BodyPart.UpperArmRight].ToString()));
+                vStringBuilder.Append(string.Format("{0},", Parts[BodyPart.LowerArmRight].ToString()));
+                vStringBuilder.Append(string.Format("{0},", Parts[BodyPart.UpperArmLeft].ToString()));
+                vStringBuilder.Append(string.Format("{0},", Parts[BodyPart.LowerArmLeft].ToString()));
                 vStringBuilder.AppendLine("");
             }
 
@@ -231,6 +232,7 @@ public class PlayerMove : MonoBehaviour
             vStreamWriter.Close();
             Debug.Log("SaveFile");
         }
+        
 
 
     }
@@ -283,75 +285,59 @@ public class PlayerMove : MonoBehaviour
         }
         else
         {
-            timeCount += 1;
-                //for (int i = 0; i < IMUs.Count; i++)
-                for (int i = 0; i < 7; i++)
+            var saveDic = new Dictionary<BodyPart, Quaternion>();
+            //for (int i = 0; i < IMUs.Count; i++)
+            for (int i = 0; i < 7; i++)
             {
-                int index = i * 4;
-                float RotX = float.Parse(strArray[index]);
-                float RotY = float.Parse(strArray[index + 1]);
-                float RotZ = float.Parse(strArray[index + 2]);
-                float RotW = float.Parse(strArray[index + 3]);
+                    int index = i * 4;
+                    float RotX = float.Parse(strArray[index]);
+                    float RotY = float.Parse(strArray[index + 1]);
+                    float RotZ = float.Parse(strArray[index + 2]);
+                    float RotW = float.Parse(strArray[index + 3]);
 
-                if ((RotX + RotY + RotZ + RotW) == 0) continue;
-                
-                //Vector3 NewAngle = new Quaternion(RotX, RotY, RotZ, RotW).eulerAngles;
-                //Vector3 OldAngle = new Quaternion(IMUs[i].RotX_Q, IMUs[i].RotY_Q, IMUs[i].RotZ_Q, IMUs[i].RotW_Q).eulerAngles;
-                //Changes[i] =(NewAngle - OldAngle);
-                //IMUs[i].RotX_Q = RotX;
-                //IMUs[i].RotY_Q = RotY;
-                //IMUs[i].RotZ_Q = RotZ;
-                //IMUs[i].RotW_Q = RotW;   
-                //refQuatation[(BodyPart)i] = new Quaternion(RotX, RotY, RotZ, RotW);
-                //refQuatation[(BodyPart)i] = new Quaternion(RotZ, -RotX, RotY, RotW);
-                Quaternion data = new Quaternion(RotX, RotY, RotZ, RotW);
-                Vector3 angle;
+                    if ((RotX + RotY + RotZ + RotW) == 0) continue;
 
+                    Quaternion data = new Quaternion(RotX, RotY, RotZ, RotW);
+                    Vector3 angle;
 
-                switch ((BodyPart)i)
-                {
-                    case BodyPart.UpperArmLeft:
-                        angle = new Vector3(data.eulerAngles.z, data.eulerAngles.y, 180 - data.eulerAngles.x);
-                        data.eulerAngles = angle;
-                        break;
+                    switch ((BodyPart)i)
+                    {
+                        case BodyPart.UpperArmLeft:
+                            angle = new Vector3(data.eulerAngles.z, data.eulerAngles.y, 180 - data.eulerAngles.x);
+                            data.eulerAngles = angle;
+                            break;
 
-                    case BodyPart.LowerArmLeft:
-                        angle = new Vector3(-data.eulerAngles.y, 180 - data.eulerAngles.x, -data.eulerAngles.z);
-                        data.eulerAngles = angle;
-                        break;
+                        case BodyPart.LowerArmLeft:
+                            angle = new Vector3(-data.eulerAngles.y, 180 - data.eulerAngles.x, -data.eulerAngles.z);
+                            data.eulerAngles = angle;
+                            break;
 
-                    case BodyPart.UpperArmRight:
-                        angle = new Vector3( data.eulerAngles.x, data.eulerAngles.z, - data.eulerAngles.y);
-                        data.eulerAngles = angle;
-                        break;
+                        case BodyPart.UpperArmRight:
+                            angle = new Vector3( data.eulerAngles.x, data.eulerAngles.z, - data.eulerAngles.y);
+                            data.eulerAngles = angle;
+                            break;
 
-                    case BodyPart.LowerArmRight:
-                        angle = new Vector3( - data.eulerAngles.x,  data.eulerAngles.z,  -data.eulerAngles.y);
-                        data.eulerAngles = angle;
-                        break;
+                        case BodyPart.LowerArmRight:
+                            angle = new Vector3( - data.eulerAngles.x,  data.eulerAngles.z,  -data.eulerAngles.y);
+                            data.eulerAngles = angle;
+                            break;
 
-                    default:
-                        angle = new Vector3(data.eulerAngles.x, data.eulerAngles.y, data.eulerAngles.z);
-                        data.eulerAngles = angle;
-                        break;
+                        default:
+                            angle = new Vector3(data.eulerAngles.x, data.eulerAngles.y, data.eulerAngles.z);
+                            data.eulerAngles = angle;
+                            break;
 
-                }
-
-
-
-
-                refQuatation[(BodyPart)i] = data;
+                    }
+                    refQuatation[(BodyPart)i] = data;
 
                 if (saveFlag)  //数据存入
                 {
-                    if (!saveFile.ContainsKey(timeCount))
-                    {
-                        saveFile[timeCount] = new Dictionary<BodyPart, Quaternion>();
-                    }
-                    saveFile[timeCount][(BodyPart)i] = data;
+                    saveDic[(BodyPart)i] = data;
                 }
-                
+
             }
+            if (saveFlag) saveFile.Add(saveDic);
+            timeCount += 1;
         }
     }
 
